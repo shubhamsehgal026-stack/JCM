@@ -1,0 +1,5 @@
+{
+  "name": "Final Jalpan Cash Manager",
+  "description": "A web-based cash and coupon management system for Jalpan Services, replicating the functionality of the desktop Python application with modern UI.",
+  "requestFramePermissions": []
+}
