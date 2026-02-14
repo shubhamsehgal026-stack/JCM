@@ -10,26 +10,45 @@ const Logo: React.FC<LogoProps> = ({ className = "", size = 40 }) => {
     <svg 
       width={size} 
       height={size} 
-      viewBox="0 0 100 100" 
+      viewBox="0 0 64 64" 
       fill="none" 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Background Shape - Now Blue */}
-      <rect x="5" y="5" width="90" height="90" rx="20" fill="#0ea5e9" fillOpacity="0.1" stroke="#0ea5e9" strokeWidth="4"/>
+      <defs>
+        <linearGradient id="cardGrad" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#0ea5e9" />
+          <stop offset="100%" stopColor="#0369a1" />
+        </linearGradient>
+        <linearGradient id="accentGrad" x1="40" y1="35" x2="55" y2="55" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#d97706" />
+        </linearGradient>
+        <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.2" />
+        </filter>
+      </defs>
+
+      {/* Stacked Cards Effect for Depth */}
+      <rect x="18" y="14" width="28" height="36" rx="6" fill="#bae6fd" transform="rotate(-10 32 32)" opacity="0.6" />
+      <rect x="18" y="14" width="28" height="36" rx="6" fill="#7dd3fc" transform="rotate(-5 32 32)" opacity="0.8" />
       
-      {/* J Shape - Now Blue */}
+      {/* Main Card */}
+      <rect x="18" y="14" width="28" height="36" rx="6" fill="url(#cardGrad)" filter="url(#dropShadow)" />
+      
+      {/* J Shape cutout/overlay on main card */}
       <path 
-        d="M65 30V30C65 30 65 30 65 30V60C65 73.8071 53.8071 85 40 85V85C26.1929 85 15 73.8071 15 60V55" 
-        stroke="#0ea5e9" 
-        strokeWidth="8" 
-        strokeLinecap="round"
+        d="M36 24 V38 C36 41.31 33.31 44 30 44 C26.69 44 24 41.31 24 38" 
+        stroke="white" 
+        strokeWidth="3.5" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
       />
       
-      {/* Accent - The Cash/Service element - Now Rose for contrast */}
-      <circle cx="70" cy="35" r="10" fill="#e11d48" />
-      <path d="M60 35H80" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-      <path d="M70 25V45" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+      {/* Financial Accent Coin */}
+      <circle cx="46" cy="44" r="7" fill="url(#accentGrad)" stroke="white" strokeWidth="2" filter="url(#dropShadow)" />
+      <path d="M46 42 V46 M44 44 H48" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+
     </svg>
   );
 };
