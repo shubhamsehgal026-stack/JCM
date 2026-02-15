@@ -93,7 +93,10 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
         if (withdrawStart) {
           const start = parseInt(withdrawStart);
           if (!isNaN(start)) {
-            const calculatedEnd = (start + config.bundleSize - 1).toString();
+            // UPDATED LOGIC: Snap to the end of the standard bundle
+            // Example: Start 43521 (Size 100) -> End 43600 (Instead of 43620)
+            // Logic: Round UP to nearest multiple of bundleSize
+            const calculatedEnd = (Math.ceil(start / config.bundleSize) * config.bundleSize).toString();
             if (calculatedEnd !== withdrawEnd) setWithdrawEnd(calculatedEnd);
           }
         }
@@ -218,7 +221,13 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
     if (newStart && entryMethod === 'SERIAL') {
        const s = parseInt(newStart);
        if (!isNaN(s)) {
-          newEnd = (s + config.bundleSize - 1).toString();
+          if (isIssue) {
+             // Issue: Default to full bundle
+             newEnd = (s + config.bundleSize - 1).toString();
+          } else {
+             // Withdraw: Snap to end of bundle (remainder logic)
+             newEnd = (Math.ceil(s / config.bundleSize) * config.bundleSize).toString();
+          }
        }
     }
 
