@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowDownToLine, Calendar, RefreshCw, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowDownToLine, Calendar, RefreshCw, Wallet, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
 const OpeningBalancePanel: React.FC = () => {
-  const { addEntry, getClosingBalance, setStatusMessage, currentDate } = useApp();
+  const { addEntry, getClosingBalance, setStatusMessage, currentDate, entries } = useApp();
   const [openingBalance, setOpeningBalance] = useState("");
   
+  // Check for existing opening balance for the current date
+  const existingOpeningEntry = entries.find(
+    e => e.type === 'OPENING' && e.date === currentDate && e.status !== 'Inactive'
+  );
+
   // Helper to safely calculate previous date from YYYY-MM-DD string
   const getPreviousDate = (dateStr: string) => {
      const d = new Date(dateStr);
@@ -57,6 +62,20 @@ const OpeningBalancePanel: React.FC = () => {
           <Wallet className="text-sky-600"/> Opening Balance Management
         </h4>
         
+        {/* Notification if Opening Balance Exists */}
+        {existingOpeningEntry && (
+             <div className="mb-6 bg-rose-50 border border-rose-200 rounded-lg p-4 flex items-start gap-3 animate-fade-in">
+                 <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={20} />
+                 <div>
+                     <h5 className="font-bold text-rose-800 text-sm">Opening Balance Already Set</h5>
+                     <p className="text-rose-600 text-sm mt-1">
+                         An opening balance of <span className="font-bold">₹{existingOpeningEntry.amount.toLocaleString()}</span> is already recorded for today ({currentDate}). 
+                         Adding another entry will add to this amount.
+                     </p>
+                 </div>
+             </div>
+        )}
+
         <div className="space-y-8">
           
           {/* Fetch Section */}

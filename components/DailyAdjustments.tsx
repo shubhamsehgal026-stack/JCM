@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Briefcase, CreditCard, Wallet, Edit2, XCircle, Delete } from 'lucide-react';
+import { Briefcase, CreditCard, Wallet, Edit2, XCircle, Delete, Trash2, Edit } from 'lucide-react';
 
 interface DailyAdjustmentsProps {
   mode: 'COST' | 'CARD' | 'PAYTM';
@@ -21,7 +21,7 @@ const DIGIT_STYLES: Record<number, string> = {
 };
 
 const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
-  const { addEntry, editingEntry, updateExistingEntry, cancelEditing } = useApp();
+  const { addEntry, editingEntry, updateExistingEntry, cancelEditing, entries, currentDate, deleteEntryById, startEditing } = useApp();
   
   const [labour, setLabour] = useState("");
   const [material, setMaterial] = useState(""); // Internal var stays 'material' for DB consistency, Label is 'Milk'
@@ -119,6 +119,40 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
     } else {
         setVal(currentVal + val.toString());
     }
+  };
+
+  // Filter Today's Entries for the Table
+  const todayEntries = entries.filter(e => {
+      if (e.date !== currentDate || e.status === 'Inactive') return false;
+      if (mode === 'COST') return e.type === 'DAILY_COST';
+      if (mode === 'CARD') return e.type === 'CARD_CASH' || e.type === 'CARD_PHONEPE';
+      if (mode === 'PAYTM') return e.type === 'COUPON_PAYTM';
+      return false;
+  }).sort((a, b) => b.timestamp - a.timestamp);
+
+  const totalAmount = todayEntries.reduce((sum, e) => {
+      if (e.type === 'DAILY_COST') return sum + (e.labourCost || 0) + (e.materialCost || 0);
+      return sum + e.amount;
+  }, 0);
+
+  const formatCurrency = (val: number) => `₹${val.toLocaleString()}`;
+
+  const getDetails = (e: any) => {
+      if (e.type === 'DAILY_COST') {
+          const parts = [];
+          if (e.labourCost) parts.push(`Labour: ₹${e.labourCost}`);
+          if (e.materialCost) parts.push(`Milk: ₹${e.materialCost}`);
+          return parts.join(', ');
+      }
+      return e.notes || e.type.replace('_', ' ');
+  };
+
+  const getTypeLabel = (e: any) => {
+       if (e.type === 'DAILY_COST') return 'Daily Cost';
+       if (e.type === 'CARD_CASH') return 'Card (Cash)';
+       if (e.type === 'CARD_PHONEPE') return 'Card (PhonePe)';
+       if (e.type === 'COUPON_PAYTM') return 'Paytm';
+       return e.type;
   };
 
   // Input Component with Integrated Keypad
@@ -224,6 +258,76 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
         </div>
       </div>
       )}
+
+      {/* TODAY'S ENTRIES TABLE */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col mt-4">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">Today's Entries</h3>
+                <div className="bg-white px-3 py-1 rounded border border-slate-200 shadow-sm">
+                    <span className="text-xs font-bold text-slate-500 uppercase mr-2">Total</span>
+                    <span className="text-lg font-bold text-slate-700">{formatCurrency(totalAmount)}</span>
+                </div>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                        <tr>
+                            <th className="px-4 py-2 whitespace-nowrap">Time</th>
+                            <th className="px-4 py-2 whitespace-nowrap">Type</th>
+                            <th className="px-4 py-2 whitespace-nowrap">Details</th>
+                            <th className="px-4 py-2 text-right whitespace-nowrap">Amount</th>
+                            <th className="px-4 py-2 text-center whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {todayEntries.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="px-4 py-8 text-center text-slate-400 italic">
+                                    No entries recorded today.
+                                </td>
+                            </tr>
+                        ) : (
+                            todayEntries.map(entry => (
+                                <tr key={entry.id} className="hover:bg-slate-50">
+                                    <td className="px-4 py-2 text-slate-500 text-xs">
+                                        {new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </td>
+                                    <td className="px-4 py-2 font-medium text-slate-700">
+                                        {getTypeLabel(entry)}
+                                    </td>
+                                    <td className="px-4 py-2 text-slate-600 text-xs">
+                                        {getDetails(entry)}
+                                    </td>
+                                    <td className="px-4 py-2 text-right font-bold text-slate-800">
+                                        {formatCurrency(entry.type === 'DAILY_COST' ? ((entry.labourCost||0) + (entry.materialCost||0)) : entry.amount)}
+                                    </td>
+                                    <td className="px-4 py-2 flex justify-center gap-2">
+                                        <button 
+                                            onClick={() => startEditing(entry)}
+                                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                            title="Edit"
+                                        >
+                                            <Edit size={14}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if(window.confirm("Are you sure you want to delete this entry?")) {
+                                                    deleteEntryById(entry.id);
+                                                }
+                                            }}
+                                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14}/>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+      </div>
 
     </div>
   );

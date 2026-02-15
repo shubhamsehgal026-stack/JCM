@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { COUPON_CONFIGS } from '../constants';
 import { EntryMode } from '../types';
-import { ArrowRight, Calculator, Hash, Layers, Delete, Trash2, Edit2, XCircle } from 'lucide-react';
+import { ArrowRight, Calculator, Hash, Layers, Delete, Trash2, Edit2, XCircle, Edit } from 'lucide-react';
 
 interface TransactionPanelProps {
   mode: 'ISSUE' | 'WITHDRAW';
@@ -24,7 +24,19 @@ const DIGIT_STYLES: Record<number, string> = {
 };
 
 const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) => {
-  const { selectedCoupon, addEntry, deleteLastEntry, editingEntry, updateExistingEntry, cancelEditing } = useApp();
+  const { 
+      selectedCoupon, 
+      addEntry, 
+      deleteLastEntry, 
+      editingEntry, 
+      updateExistingEntry, 
+      cancelEditing,
+      entries,
+      currentDate,
+      deleteEntryById,
+      startEditing
+  } = useApp();
+  
   const config = COUPON_CONFIGS.find(c => c.label === selectedCoupon) || COUPON_CONFIGS[0];
 
   // Entry Method State (Toggle)
@@ -147,6 +159,14 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
     });
   }, [issueBooklets, issueStart, issueEnd, withdrawBooklets, withdrawStart, withdrawEnd, config, mode, entryMethod]);
 
+  // Filter Transactions for Table
+  const todayTransactions = entries
+    .filter(e => e.date === currentDate && e.type === mode && e.status !== 'Inactive')
+    .sort((a, b) => b.timestamp - a.timestamp);
+
+  const totalAmount = todayTransactions.reduce((sum, e) => sum + e.amount, 0);
+
+  const formatCurrency = (val: number) => `₹${val.toLocaleString()}`;
 
   const handleTransaction = () => {
     const isIssue = mode === 'ISSUE';
@@ -414,6 +434,82 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
           )}
         </div>
       </div>
+
+      {/* TODAY'S TRANSACTIONS TABLE */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center flex-wrap gap-2">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    {mode === 'ISSUE' ? 'Today\'s Issues' : 'Today\'s Withdrawals'}
+                </h3>
+                <div className="bg-white px-3 py-1 rounded border border-slate-200 shadow-sm">
+                    <span className="text-xs font-bold text-slate-500 uppercase mr-2">Total</span>
+                    <span className={`text-lg font-bold ${mode === 'ISSUE' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {formatCurrency(totalAmount)}
+                    </span>
+                </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm text-left">
+                    <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200">
+                        <tr>
+                            <th className="px-4 py-2 whitespace-nowrap">Time</th>
+                            <th className="px-4 py-2 whitespace-nowrap">Coupon</th>
+                            <th className="px-4 py-2 whitespace-nowrap">Serial Range</th>
+                            <th className="px-4 py-2 text-right whitespace-nowrap">Qty</th>
+                            <th className="px-4 py-2 text-right whitespace-nowrap">Amount</th>
+                            <th className="px-4 py-2 text-center whitespace-nowrap">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {todayTransactions.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 italic">
+                                    No {mode === 'ISSUE' ? 'issues' : 'withdrawals'} recorded today.
+                                </td>
+                            </tr>
+                        ) : (
+                            todayTransactions.map(entry => (
+                                <tr key={entry.id} className="hover:bg-slate-50">
+                                    <td className="px-4 py-2 text-slate-500 text-xs">
+                                        {new Date(entry.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </td>
+                                    <td className="px-4 py-2 font-medium text-slate-700">
+                                        {entry.couponType}
+                                        {entry.entryMode === 'BUNDLE' && <span className="ml-1 text-xs text-slate-400">(Bundle)</span>}
+                                    </td>
+                                    <td className="px-4 py-2 text-slate-600 font-mono text-xs">
+                                        {entry.serialStart ? `${entry.serialStart} - ${entry.serialEnd}` : '-'}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-slate-700">{entry.quantity}</td>
+                                    <td className="px-4 py-2 text-right font-bold text-slate-800">{formatCurrency(entry.amount)}</td>
+                                    <td className="px-4 py-2 flex justify-center gap-2">
+                                        <button 
+                                            onClick={() => startEditing(entry)}
+                                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                            title="Edit"
+                                        >
+                                            <Edit size={14}/>
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if(window.confirm("Are you sure you want to delete this entry?")) {
+                                                    deleteEntryById(entry.id);
+                                                }
+                                            }}
+                                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14}/>
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+       </div>
 
     </div>
   );
