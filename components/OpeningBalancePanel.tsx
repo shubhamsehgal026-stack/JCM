@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ArrowDownToLine, Calendar, RefreshCw, Wallet, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
 const OpeningBalancePanel: React.FC = () => {
-  const { addEntry, getClosingBalance, setStatusMessage, currentDate, entries } = useApp();
+  const { addEntry, setStatusMessage, currentDate, entries } = useApp();
   const [openingBalance, setOpeningBalance] = useState("");
   
   // Check for existing opening balance for the current date
@@ -50,9 +50,13 @@ const OpeningBalancePanel: React.FC = () => {
   };
 
   const handleFetchClosing = () => {
-    const balance = getClosingBalance(sourceDate);
-    setOpeningBalance(balance.toString());
-    setStatusMessage(`Fetched closing balance from ${sourceDate}: ₹${balance}`);
+    // FETCH LOGIC CHANGED: Now fetches the Total Withdrawals from the source date
+    const totalWithdrawals = entries
+      .filter(e => e.date === sourceDate && e.type === 'WITHDRAW' && e.status !== 'Inactive')
+      .reduce((sum, e) => sum + e.amount, 0);
+
+    setOpeningBalance(totalWithdrawals.toString());
+    setStatusMessage(`Fetched total withdrawals from ${sourceDate}: ₹${totalWithdrawals}`);
   };
 
   return (
@@ -120,9 +124,12 @@ const OpeningBalancePanel: React.FC = () => {
                  onClick={handleFetchClosing}
                  className="w-full sm:w-auto bg-white border border-slate-300 text-slate-700 hover:text-sky-600 hover:border-sky-300 px-6 py-2.5 rounded-lg font-bold transition-colors shadow-sm h-[42px]"
                >
-                 Fetch Balance
+                 Fetch Withdrawals
                </button>
              </div>
+             <p className="text-xs text-slate-400 mt-2">
+               Fetches the Total Withdrawals amount from the selected date.
+             </p>
           </div>
 
           {/* Set Section */}

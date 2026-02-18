@@ -144,7 +144,13 @@ export const archiveAllEntries = async (entries: CashEntry[]) => {
 // --- AGGREGATION (Client-Side) ---
 
 export const calculateAggregates = (entries: CashEntry[], dateStr: string): DayAggregates => {
-  const dayEntries = entries.filter(e => e.date === dateStr && e.status === 'Active');
+  // Ensure we filter out any entry that is strictly 'Inactive'.
+  // We use a case-insensitive check to be safe, though 'Inactive' is the standard.
+  const dayEntries = entries.filter(e => {
+    if (e.date !== dateStr) return false;
+    const status = (e.status || 'Active').toUpperCase();
+    return status !== 'INACTIVE'; 
+  });
 
   let opening = 0;
   let couponSales = 0;
@@ -163,6 +169,7 @@ export const calculateAggregates = (entries: CashEntry[], dateStr: string): DayA
         couponSales += e.amount;
         break;
       case 'WITHDRAW':
+        // Subtract withdrawals from the Coupon Sales total
         couponSales -= Math.abs(e.amount);
         break;
       case 'CARD_CASH':
@@ -184,6 +191,7 @@ export const calculateAggregates = (entries: CashEntry[], dateStr: string): DayA
   const totalCouponSales = opening + couponSales;
   const totalCardSales = cardCash + cardPhonePe;
   const totalSales = totalCouponSales + totalCardSales;
+  // Closing = (Opening + Issues - Withdrawals) - (Paytm + Labour + Milk)
   const couponCashClosing = totalCouponSales - (couponPaytm + labour + material);
   const totalCashDeposit = couponCashClosing + cardCash;
 
