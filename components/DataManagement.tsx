@@ -12,6 +12,8 @@ import {
   HEADERS
 } from '../services/analytics';
 import { Table, Calendar, FileText, Download, ClipboardPaste, X, Check, Copy, Archive, RotateCcw, Plus, ChevronDown, Trash2 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type DataTab = 'ENTRIES' | 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'REPORT';
 
@@ -59,6 +61,78 @@ const DataManagement: React.FC = () => {
         const dummy = currentHeaders.reduce((acc, h) => ({...acc, [h]: ''}), {});
         downloadCSV([dummy], `Template_${activeTab}.csv`);
     }
+  };
+
+  const handlePDFExport = () => {
+    const data = getCurrentData();
+    const originalHeaders = currentHeaders;
+    
+    if (data.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    // Landscape orientation for horizontal report
+    const doc = new jsPDF({ orientation: 'landscape' });
+    
+    // --- Logo Simulation (Blue Rounded Rect with 'J') ---
+    doc.setFillColor(14, 165, 233); // Sky-500 brand color
+    doc.roundedRect(14, 10, 14, 14, 3, 3, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("J", 19, 19); // Centered roughly in the rect
+
+    // --- Header Text ---
+    doc.setTextColor(15, 23, 42); // Slate-900
+    doc.setFontSize(18);
+    doc.text(`Jalpan Services - ${activeTab} Report`, 34, 16);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // Slate-500
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 34, 22);
+
+    // Prepare headers for PDF (Replace ₹ with Rs.)
+    const pdfHeaders = originalHeaders.map(h => h.replace('(₹)', '(Rs.)'));
+
+    // Prepare table body
+    const tableBody = data.map(row => originalHeaders.map(h => {
+        const val = (row as any)[h];
+        // Format currency if needed
+        const isNumber = typeof val === 'number';
+        const isCurrency = h.includes('(₹)') || ['Total_Amount', 'Amount', 'Cost', 'Balance'].some(k => h.includes(k));
+        
+        if (val !== undefined && val !== null) {
+            if (isNumber && isCurrency) {
+                 return val === 0 ? '-' : `Rs. ${val.toLocaleString()}`;
+            }
+            return val;
+        }
+        return '';
+    }));
+
+    autoTable(doc, {
+        head: [pdfHeaders],
+        body: tableBody,
+        startY: 35,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold', halign: 'center' }, // Sky-500
+        columnStyles: {
+            // Right align numeric columns (heuristic: if header contains Rs or Amount)
+            ...pdfHeaders.reduce((acc: any, h, i) => {
+                if (h.includes('Rs.') || h.includes('Amount')) {
+                    acc[i] = { halign: 'right' };
+                }
+                return acc;
+            }, {})
+        },
+        theme: 'grid',
+        margin: { top: 35 }
+    });
+
+    doc.save(`Jalpan_${activeTab}_Report.pdf`);
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -223,11 +297,22 @@ const DataManagement: React.FC = () => {
                      <ClipboardPaste size={16} /> Paste Data
                  </button>
              )}
+             
+             {/* PDF Export Button */}
+             {(activeTab === 'DAILY' || activeTab === 'WEEKLY' || activeTab === 'MONTHLY' || activeTab === 'REPORT') && (
+                 <button 
+                  onClick={handlePDFExport}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-rose-100 text-rose-700 border border-rose-200 px-4 py-2 rounded shadow-sm hover:bg-rose-200 transition font-medium text-sm whitespace-nowrap"
+                 >
+                     <FileText size={16} /> PDF Report
+                 </button>
+             )}
+
              <button 
               onClick={handleDownload}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-200 text-slate-800 px-4 py-2 rounded shadow-sm hover:bg-slate-300 transition font-medium text-sm whitespace-nowrap"
              >
-                 <Download size={16} /> Export
+                 <Download size={16} /> Export CSV
              </button>
            </div>
         </div>

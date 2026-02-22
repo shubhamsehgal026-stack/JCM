@@ -441,11 +441,19 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
                     {mode === 'ISSUE' ? 'Today\'s Issues' : 'Today\'s Withdrawals'}
                 </h3>
-                <div className="bg-white px-3 py-1 rounded border border-slate-200 shadow-sm">
-                    <span className="text-xs font-bold text-slate-500 uppercase mr-2">Total</span>
-                    <span className={`text-lg font-bold ${mode === 'ISSUE' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                        {formatCurrency(totalAmount)}
-                    </span>
+                <div className="flex gap-2">
+                    <div className="bg-white px-3 py-1 rounded border border-slate-200 shadow-sm">
+                        <span className="text-xs font-bold text-slate-500 uppercase mr-2">Entries</span>
+                        <span className="text-lg font-bold text-slate-700">
+                            {todayTransactions.length}
+                        </span>
+                    </div>
+                    <div className="bg-white px-3 py-1 rounded border border-slate-200 shadow-sm">
+                        <span className="text-xs font-bold text-slate-500 uppercase mr-2">Total</span>
+                        <span className={`text-lg font-bold ${mode === 'ISSUE' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {formatCurrency(totalAmount)}
+                        </span>
+                    </div>
                 </div>
             </div>
             

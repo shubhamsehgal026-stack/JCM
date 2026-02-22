@@ -8,6 +8,26 @@ import { FOOTER_TEXT } from '../constants';
 
 const formatCurrency = (val: number) => `₹${val.toLocaleString()}`;
 
+const SECTION_ORDER: Record<string, number> = {
+  'OPENING': 1,
+  'ISSUE': 2,
+  'WITHDRAW': 3,
+  'CARD_CASH': 4,
+  'CARD_PHONEPE': 4,
+  'COUPON_PAYTM': 5,
+  'DAILY_COST': 6
+};
+
+const COUPON_ORDER: Record<string, number> = {
+  'Rs 5': 1,
+  'Rs 10': 2,
+  'Rs 15': 3,
+  'Rs 20': 4,
+  'Rs 50': 5,
+  'Rs 50 (Combo)': 6,
+  'Rs 100 (Combo)': 7
+};
+
 const SummaryDashboard: React.FC = () => {
   const { entries, currentDate, aggregates, deleteEntryById, restoreEntryById, startEditing, currentUser } = useApp();
   const [isModifyMode, setIsModifyMode] = useState(false);
@@ -15,7 +35,23 @@ const SummaryDashboard: React.FC = () => {
   // Filter: Date only (Show both Active and Inactive)
   const todayEntries = entries
     .filter(e => e.date === currentDate)
-    .sort((a, b) => b.timestamp - a.timestamp);
+    .sort((a, b) => {
+        // 1. Sort by Section
+        const sectionA = SECTION_ORDER[a.type] || 99;
+        const sectionB = SECTION_ORDER[b.type] || 99;
+        
+        if (sectionA !== sectionB) return sectionA - sectionB;
+        
+        // 2. Sort by Coupon Value (for ISSUE and WITHDRAW)
+        if ((a.type === 'ISSUE' || a.type === 'WITHDRAW') && a.couponType && b.couponType) {
+            const couponA = COUPON_ORDER[a.couponType] || 99;
+            const couponB = COUPON_ORDER[b.couponType] || 99;
+            if (couponA !== couponB) return couponA - couponB;
+        }
+        
+        // 3. Fallback to timestamp (Newest first)
+        return b.timestamp - a.timestamp;
+    });
 
   const getEntryDescription = (e: CashEntry) => {
     if (e.type === 'DAILY_COST') return `Labour: ${e.labourCost}, Milk: ${e.materialCost}`;
@@ -33,6 +69,9 @@ const SummaryDashboard: React.FC = () => {
 
   const generatePDFDoc = () => {
     const doc = new jsPDF();
+    
+    // Helper for PDF currency (Use Rs. instead of symbol for PDF compatibility)
+    const formatCurrencyPDF = (val: number) => `Rs. ${val.toLocaleString()}`;
     
     // --- Logo Simulation (Blue Rounded Rect with 'J') ---
     doc.setFillColor(14, 165, 233); // Sky-500 brand color
@@ -71,13 +110,13 @@ const SummaryDashboard: React.FC = () => {
     doc.text("Financial Summary", 14, 40);
 
     const totalsData = [
-      ["Total Coupon Sales", formatCurrency(aggregates.totalCouponSales)],
-      ["Total Card Sales", formatCurrency(aggregates.totalCardSales)],
-      ["Total Sales", formatCurrency(aggregates.totalSales)],
-      ["Coupon Paytm", formatCurrency(aggregates.couponPaytm)],
-      ["Costs (Labour+Milk)", formatCurrency(aggregates.labour + aggregates.material)],
-      ["Coupon Cash Closing", formatCurrency(aggregates.couponCashClosing)],
-      ["Total Cash Deposit", formatCurrency(aggregates.totalCashDeposit)],
+      ["Total Coupon Sales", formatCurrencyPDF(aggregates.totalCouponSales)],
+      ["Total Card Sales", formatCurrencyPDF(aggregates.totalCardSales)],
+      ["Total Sales", formatCurrencyPDF(aggregates.totalSales)],
+      ["Coupon Paytm", formatCurrencyPDF(aggregates.couponPaytm)],
+      ["Costs (Labour+Milk)", formatCurrencyPDF(aggregates.labour + aggregates.material)],
+      ["Coupon Cash Closing", formatCurrencyPDF(aggregates.couponCashClosing)],
+      ["Total Cash Deposit", formatCurrencyPDF(aggregates.totalCashDeposit)],
     ];
     
     autoTable(doc, {
@@ -90,7 +129,8 @@ const SummaryDashboard: React.FC = () => {
       columnStyles: {
           0: { cellWidth: 120 },
           1: { cellWidth: 'auto', halign: 'right' }
-      }
+      },
+      margin: { left: 14, right: 14 }
     });
 
     // --- Entries Section ---
@@ -103,7 +143,7 @@ const SummaryDashboard: React.FC = () => {
       e.couponType || "-",
       e.serialStart ? `${e.serialStart}-${e.serialEnd}` : "-",
       e.quantity || "-",
-      formatCurrency(getEntryValue(e))
+      formatCurrencyPDF(getEntryValue(e))
     ]);
 
     autoTable(doc, {
@@ -115,7 +155,8 @@ const SummaryDashboard: React.FC = () => {
       columnStyles: {
           4: { halign: 'right' }
       },
-      alternateRowStyles: { fillColor: [248, 250, 252] }
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      margin: { left: 14, right: 14 }
     });
 
     // Footer
