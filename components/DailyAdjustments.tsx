@@ -20,6 +20,60 @@ const DIGIT_STYLES: Record<number, string> = {
   0: "bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200",
 };
 
+// Helper for keypad click
+const handleKeypadClick = (currentVal: string, setVal: (v: string) => void, val: number | 'BACKSPACE') => {
+  if (val === 'BACKSPACE') {
+      setVal(currentVal.slice(0, -1));
+  } else {
+      setVal(currentVal + val.toString());
+  }
+};
+
+// Input Component with Integrated Keypad
+const InputWithKeypad = ({ 
+    value, 
+    setValue,
+    placeholder, 
+    label 
+}: { value: string, setValue: (v: string) => void, placeholder: string, label: string }) => (
+  <div className="flex-1 mb-4">
+      <label className="block text-sm font-bold text-slate-700 mb-1">
+          {label}
+      </label>
+      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <input 
+              type="tel"
+              inputMode="decimal" 
+              value={value} 
+              onChange={(e) => setValue(e.target.value)}
+              className="input-field w-full text-lg mb-3" 
+              placeholder={placeholder} 
+          />
+          
+          {/* INLINE KEYPAD */}
+          <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                  <button
+                      key={num}
+                      type="button"
+                      onClick={() => handleKeypadClick(value, setValue, num)}
+                      className={`flex-1 min-w-[36px] h-10 font-bold rounded-lg border text-lg shadow-sm transition-transform active:scale-95 ${DIGIT_STYLES[num]}`}
+                  >
+                      {num}
+                  </button>
+              ))}
+              <button
+                  type="button"
+                  onClick={() => handleKeypadClick(value, setValue, 'BACKSPACE')}
+                  className="flex-1 min-w-[36px] h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg border border-slate-300 flex items-center justify-center shadow-sm transition-transform active:scale-95"
+              >
+                  <Delete size={20} />
+              </button>
+          </div>
+      </div>
+  </div>
+);
+
 const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
   const { addEntry, editingEntry, updateExistingEntry, cancelEditing, entries, currentDate, deleteEntryById, startEditing } = useApp();
   
@@ -112,15 +166,6 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
     setCouponPaytm("");
   };
 
-  // Helper for keypad click
-  const handleKeypadClick = (currentVal: string, setVal: (v: string) => void, val: number | 'BACKSPACE') => {
-    if (val === 'BACKSPACE') {
-        setVal(currentVal.slice(0, -1));
-    } else {
-        setVal(currentVal + val.toString());
-    }
-  };
-
   // Filter Today's Entries for the Table
   const todayEntries = entries.filter(e => {
       if (e.date !== currentDate || e.status === 'Inactive') return false;
@@ -155,50 +200,6 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
        return e.type;
   };
 
-  // Input Component with Integrated Keypad
-  const InputWithKeypad = ({ 
-      value, 
-      setValue,
-      placeholder, 
-      label 
-  }: { value: string, setValue: (v: string) => void, placeholder: string, label: string }) => (
-    <div className="flex-1 mb-4">
-        <label className="block text-sm font-bold text-slate-700 mb-1">
-            {label}
-        </label>
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <input 
-                type="number" 
-                value={value} 
-                onChange={(e) => setValue(e.target.value)}
-                className="input-field w-full text-lg mb-3" 
-                placeholder={placeholder} 
-            />
-            
-            {/* INLINE KEYPAD */}
-            <div className="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
-                    <button
-                        key={num}
-                        type="button"
-                        onClick={() => handleKeypadClick(value, setValue, num)}
-                        className={`flex-1 min-w-[36px] h-10 font-bold rounded-lg border text-lg shadow-sm transition-transform active:scale-95 ${DIGIT_STYLES[num]}`}
-                    >
-                        {num}
-                    </button>
-                ))}
-                <button
-                    type="button"
-                    onClick={() => handleKeypadClick(value, setValue, 'BACKSPACE')}
-                    className="flex-1 min-w-[36px] h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg border border-slate-300 flex items-center justify-center shadow-sm transition-transform active:scale-95"
-                >
-                    <Delete size={20} />
-                </button>
-            </div>
-        </div>
-    </div>
-  );
-
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6 pb-8">
       
@@ -214,8 +215,8 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
       <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
         <h4 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Briefcase className="text-rose-600"/> Daily Operational Costs</h4>
         <div className="space-y-2">
-          <InputWithKeypad value={labour} setValue={setLabour} label="Labour Cost (₹)" placeholder="0.00" />
-          <InputWithKeypad value={material} setValue={setMaterial} label="Milk (₹)" placeholder="0.00" />
+          <InputWithKeypad key="labour" value={labour} setValue={setLabour} label="Labour Cost (₹)" placeholder="0.00" />
+          <InputWithKeypad key="material" value={material} setValue={setMaterial} label="Milk (₹)" placeholder="0.00" />
           <button onClick={handleCost} className={`btn-secondary w-full text-white py-3 text-lg mt-2 ${editingEntry ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-rose-600 hover:bg-rose-700'}`}>
              {editingEntry ? 'Update Costs' : 'Save Costs'}
           </button>
@@ -229,7 +230,7 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
         <div className="space-y-6">
           {(!editingEntry || editingEntry.type === 'CARD_CASH') && (
             <div>
-                <InputWithKeypad value={cardCash} setValue={setCardCash} label="Card Cash (₹)" placeholder="Amount" />
+                <InputWithKeypad key="cardCash" value={cardCash} setValue={setCardCash} label="Card Cash (₹)" placeholder="Amount" />
                 <button onClick={handleCardCash} className={`w-full text-white py-3 rounded-md font-bold shadow-sm ${editingEntry ? 'bg-yellow-600' : 'bg-sky-600'}`}>
                     {editingEntry ? 'Update' : 'Add Card Cash'}
                 </button>
@@ -237,7 +238,7 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
           )}
           {(!editingEntry || editingEntry.type === 'CARD_PHONEPE') && (
             <div>
-                <InputWithKeypad value={cardPhone} setValue={setCardPhone} label="PhonePe / UPI (₹)" placeholder="Amount" />
+                <InputWithKeypad key="cardPhone" value={cardPhone} setValue={setCardPhone} label="PhonePe / UPI (₹)" placeholder="Amount" />
                 <button onClick={handleCardPhone} className={`w-full text-white py-3 rounded-md font-bold shadow-sm ${editingEntry ? 'bg-yellow-600' : 'bg-sky-600'}`}>
                     {editingEntry ? 'Update' : 'Add PhonePe'}
                 </button>
@@ -251,7 +252,7 @@ const DailyAdjustments: React.FC<DailyAdjustmentsProps> = ({ mode }) => {
       <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
         <h4 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Wallet className="text-sky-600"/> Coupon Paytm Entry</h4>
         <div className="p-4 bg-sky-50 rounded-lg border border-sky-100">
-             <InputWithKeypad value={couponPaytm} setValue={setCouponPaytm} label="Paytm Received Amount (₹)" placeholder="Amount" />
+             <InputWithKeypad key="couponPaytm" value={couponPaytm} setValue={setCouponPaytm} label="Paytm Received Amount (₹)" placeholder="Amount" />
              <button onClick={handleCouponPaytm} className={`w-full text-white py-3 rounded-md font-bold shadow-sm ${editingEntry ? 'bg-yellow-600' : 'bg-sky-600'}`}>
                 {editingEntry ? 'Update' : 'Add Paytm'}
             </button>
