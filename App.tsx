@@ -143,16 +143,6 @@ const App = () => {
     <AppProvider>
       <AppContent />
       <style>{`
-        html {
-          -webkit-text-size-adjust: 100%;
-          -webkit-tap-highlight-color: transparent;
-        }
-        
-        /* Smooth scrolling for iOS */
-        .overflow-y-auto, .overflow-x-auto {
-          -webkit-overflow-scrolling: touch;
-        }
-
         .input-field {
           padding: 0.5rem 0.75rem;
           background-color: #ffffff;
@@ -162,7 +152,6 @@ const App = () => {
           outline: none;
           transition: all 0.15s ease-in-out;
           font-weight: 500;
-          font-size: 16px; /* Prevent zoom on iOS */
         }
         .input-field::placeholder {
           color: #94a3b8;
@@ -180,10 +169,6 @@ const App = () => {
           box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
           transition: transform 0.1s;
           cursor: pointer;
-          min-height: 44px; /* Touch target size */
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
         .btn-primary:active {
           transform: scale(0.95);
@@ -198,10 +183,6 @@ const App = () => {
           box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
           transition: background-color 0.15s;
           cursor: pointer;
-          min-height: 44px; /* Touch target size */
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
         .btn-secondary:hover {
           background-color: #cbd5e1;

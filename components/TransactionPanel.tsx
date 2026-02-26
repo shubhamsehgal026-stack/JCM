@@ -334,7 +334,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
                                     key={num}
                                     type="button"
                                     onClick={() => handleKeypadClick(num)}
-                                    className={`flex-1 h-12 font-bold rounded-lg border text-lg shadow-sm transition-transform active:scale-95 ${DIGIT_STYLES[num]}`}
+                                    className={`flex-1 h-10 font-bold rounded-lg border text-lg shadow-sm transition-transform active:scale-95 ${DIGIT_STYLES[num]}`}
                                 >
                                     {num}
                                 </button>
@@ -342,7 +342,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ mode, children }) =
                             <button
                                 type="button"
                                 onClick={() => handleKeypadClick('BACKSPACE')}
-                                className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg border border-slate-300 flex items-center justify-center shadow-sm transition-transform active:scale-95"
+                                className="flex-1 h-10 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-lg border border-slate-300 flex items-center justify-center shadow-sm transition-transform active:scale-95"
                             >
                                 <Delete size={20} />
                             </button>
