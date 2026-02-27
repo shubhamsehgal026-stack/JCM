@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const AppContent = () => {
-  const { statusMessage, currentUser, activeTab, setActiveTab } = useApp();
+  const { statusMessage, currentUser, activeTab, setActiveTab, cancelEditing } = useApp();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // If not logged in, show Login screen
@@ -64,7 +64,11 @@ const AppContent = () => {
 
   const NavItem = ({ tab, label, icon: Icon }: { tab: Tab; label: string; icon: any }) => (
     <button
-      onClick={() => { setActiveTab(tab); setIsSidebarOpen(false); }}
+      onClick={() => { 
+        cancelEditing();
+        setActiveTab(tab); 
+        setIsSidebarOpen(false); 
+      }}
       className={`w-full flex items-center gap-3 px-4 py-3 text-left font-medium transition-colors border-l-4
         ${activeTab === tab 
           ? 'bg-rose-50 border-rose-600 text-rose-700' 
@@ -204,6 +208,18 @@ const App = () => {
         .no-scrollbar {
           -ms-overflow-style: none;  /* IE and Edge */
           scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Hide spin button for Chrome, Safari, Edge, Opera */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        /* Hide spin button for Firefox */
+        input[type=number] {
+          -moz-appearance: textfield;
         }
       `}</style>
     </AppProvider>
